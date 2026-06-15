@@ -10,9 +10,9 @@ def delete_kw(sig: Signature, name: str) -> Signature:
   new_params = [param for param in params if param.name != name]
   return sig.replace(parameters=new_params)
 
-def add_kw(sig: Signature, name: str, default) -> Signature:
+def add_kw(sig: Signature, name: str, default, annotation) -> Signature:
   """Adds a keyword-only parameter to a signature. (before the **kwargs)"""
-  new_param = Parameter(name, Parameter.KEYWORD_ONLY, default=default)
+  new_param = Parameter(name, Parameter.KEYWORD_ONLY, default=default, annotation=annotation)
   params = list(sig.parameters.values())
   if params and params[-1].kind == Parameter.VAR_KEYWORD:
     new_params = params[:-1] + [new_param, params[-1]]
@@ -61,7 +61,7 @@ class Dependency(Generic[T]):
     # 2. Add parsed parameters
     parsed_sig = Signature.from_callable(self.parse)
     for name, param in parsed_sig.parameters.items():
-      wrapped_sig = add_kw(wrapped_sig, name, param.default)
+      wrapped_sig = add_kw(wrapped_sig, name, param.default, annotation=param.annotation)
 
     def wrapper(*args, **kwargs):
       parse_args = {name: kwargs.get(name) for name in parsed_sig.parameters}
@@ -78,3 +78,7 @@ class Dependency(Generic[T]):
   def Depends(self) -> T:
     """Dependency injection marker (used by `inject` to substitute the parsed value)"""
     return self # type: ignore
+
+def dependency(func: Callable[..., T]) -> Dependency[T]:
+  """Create a dependency from a function."""
+  return Dependency(func) # type: ignore

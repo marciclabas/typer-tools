@@ -29,18 +29,17 @@ def export(verbose: bool = Verbose):
 Typer does not support dependency injection. But we can handle:
 
 ```python
-from typer_tools import Dependency
+from typer_tools import dependency
 
-def parse_client(
+@dependency
+def dep(
   host: str = typer.Option(..., '--host', help='HTTP host'), # or our own `option`, plain better
   port: int = typer.Option(80, '--port', help='HTTP port'),
   token: str = typer.Option(..., '--token', help='Access token')
 ) -> Client:
   ...
 
-dep = Dependency(parse_client)
-
-@typer.command()
+@app.command()
 @dep.inject
 def main(some_option: str, client: Client = dep.Depends()):
   ...
